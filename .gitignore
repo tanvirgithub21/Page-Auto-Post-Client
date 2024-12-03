@@ -39,8 +39,3 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
-
-git config --global user.name tanvirgithub21
-
-git config --global user.email tanvir.bd.global@gmail.com
