@@ -1,27 +1,32 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { CldUploadWidget } from "next-cloudinary";
 import axiosInstance from "../../axiosConfig";
 import { toast } from "sonner";
-import axios from "axios";
+import AddNewPageModal from "@/components/addNewPageModal";
+import CldUploadContent from "@/components/cldUploadContent";
+import UplodeContentConfiguration from "@/components/uplodeContentConfiguration";
 
 export default function Home() {
   // Netowark requst call
-  const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [noPageFound, setNoPageFound] = useState(true);
 
   useEffect(() => {
     const fetchPages = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          "http://localhost:5000/api/v1/page/all"
-        );
-        setPages(response.data);
+        const response = await axiosInstance.get("/page/all");
         setPageOptions(response?.data);
+
         set_page_id(response?.data[0]?.page_id || "No Page Found");
+        setNoPageFound(response?.data[0]?.page_id && false);
         toast.success("Pages fetched successfully!");
       } catch (error) {
+        if (error.status === 404) {
+          setNoPageFound(true);
+        } else {
+          setNoPageFound(false);
+        }
         console.error("Error fetching pages:", error);
         const errorMessage =
           error.response?.data?.message || "Failed to fetch pages";
@@ -127,13 +132,10 @@ export default function Home() {
     };
     console.log("Saving new page data:", pageData);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/v1/page/add",
-        pageData
-      );
+      const response = await axiosInstance.post("/page/add", pageData);
       console.log("Response:", response);
 
-      // Show success toast if needed
+      // Show success toast
       toast.success("Token created successfully!");
     } catch (error) {
       // Handle errors properly
@@ -156,83 +158,25 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg space-y-6">
-        {/* Page Name Selector */}
-        <div className="space-y-2">
-          <label
-            htmlFor="pageName"
-            className="block text-lg font-bold text-gray-800"
-          >
-            Select Page Name
-          </label>
-          <select
-            id="pageName"
-            value={page_id}
-            onChange={(e) => set_page_id(e.target.value)}
-            className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 text-gray-700"
-          >
-            {pageOptions.map((option) => (
-              <option key={option._id} value={option.page_id}>
-                {option.page_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Content Type Selector */}
-        <div className="space-y-2">
-          <label
-            htmlFor="contentType"
-            className="block text-lg font-bold text-gray-800"
-          >
-            Select Content Type
-          </label>
-          <select
-            id="contentType"
-            value={content_type}
-            onChange={(e) => set_content_type(e.target.value)}
-            className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 text-gray-700"
-          >
-            <option value="reel">Reel</option>
-            <option value="video">Video</option>
-            <option value="photo">Photo</option>
-            <option value="story">Story</option>
-          </select>
-        </div>
-
-        {/* Description Field */}
-        <div className="space-y-2">
-          <label
-            htmlFor="description"
-            className="block text-lg font-bold text-gray-800"
-          >
-            Add Content Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => set_description(e.target.value)}
-            className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 text-gray-700"
-            placeholder="Write a description for your content..."
-            rows="4"
-          ></textarea>
-        </div>
+        {!noPageFound && (
+          <UplodeContentConfiguration
+            page_id={page_id}
+            set_page_id={set_page_id}
+            pageOptions={pageOptions}
+            content_type={content_type}
+            set_content_type={set_content_type}
+            description={description}
+            set_description={set_description}
+          />
+        )}
 
         {/* Upload Section */}
-        <div className="space-y-4">
-          <p className="text-xl font-semibold text-gray-800 text-center">
-            Upload Page
-          </p>
-          <CldUploadWidget uploadPreset={preset} onSuccess={uploadComponentFn}>
-            {({ open }) => (
-              <button
-                onClick={() => open()}
-                className="w-full px-5 py-3 bg-blue-600 text-white font-bold text-lg rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Upload Image
-              </button>
-            )}
-          </CldUploadWidget>
-        </div>
+        {!noPageFound && (
+          <CldUploadContent
+            uploadComponentFn={uploadComponentFn}
+            preset={preset}
+          />
+        )}
 
         {/* Add Page Button */}
         <div className="space-y-4 text-center">
@@ -247,63 +191,20 @@ export default function Home() {
 
       {/* Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-2xl font-semibold text-gray-800">
-              Add New Page
-            </h2>
-            <div className="space-y-2 mt-4">
-              <input
-                type="text"
-                placeholder="Page Name"
-                className="w-full p-3 border border-gray-400 rounded-lg text-gray-700"
-                value={newPageName}
-                onChange={(e) => setNewPageName(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Page ID"
-                className="w-full p-3 border border-gray-400 rounded-lg text-gray-700"
-                value={pageId}
-                onChange={(e) => setPageId(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Short-Lived Token"
-                className="w-full p-3 border border-gray-400 rounded-lg text-gray-700"
-                value={shortLivedToken}
-                onChange={(e) => setShortLivedToken(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="App ID"
-                className="w-full p-3 border border-gray-400 rounded-lg text-gray-700"
-                value={appId}
-                onChange={(e) => setAppId(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="App Secret"
-                className="w-full p-3 border border-gray-400 rounded-lg text-gray-700"
-                value={appSecret}
-                onChange={(e) => setAppSecret(e.target.value)}
-              />
-
-              <button
-                onClick={handleSavePage}
-                className="w-full px-5 py-3 bg-blue-600 text-white font-bold text-lg rounded-lg hover:bg-blue-700 mt-2"
-              >
-                Save Page
-              </button>
-              <button
-                onClick={closeModal}
-                className="w-full px-5 py-3 bg-red-600 text-white font-bold text-lg rounded-lg hover:bg-red-700 mt-2"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <AddNewPageModal
+          newPageName={newPageName}
+          setNewPageName={setNewPageName}
+          pageId={pageId}
+          setPageId={setPageId}
+          shortLivedToken={shortLivedToken}
+          setShortLivedToken={setShortLivedToken}
+          appId={appId}
+          setAppId={setAppId}
+          appSecret={appSecret}
+          setAppSecret={setAppSecret}
+          closeModal={closeModal}
+          handleSavePage={handleSavePage}
+        />
       )}
     </div>
   );
