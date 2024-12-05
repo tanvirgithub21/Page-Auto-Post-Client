@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import AddNewPageModal from "@/components/addNewPageModal";
 import CldUploadContent from "@/components/cldUploadContent";
 import UplodeContentConfiguration from "@/components/uplodeContentConfiguration";
+import StorageCheck from "@/components/storageCheck";
 
 export default function Home() {
   // Netowark requst call
@@ -35,12 +36,18 @@ export default function Home() {
         setLoading(false);
       }
     };
-
     fetchPages();
   }, []);
 
+  // cloudinary
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const preset = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
+
+  // cloudinary storage chack
+  const [storage, setStorage] = useState({
+    used_storage: "0.00",
+    total_torage: "0.00",
+  });
 
   // State for page name options and selected values
   const [pageOptions, setPageOptions] = useState([]);
@@ -89,6 +96,21 @@ export default function Home() {
       toast.error("Error saving reel data", { position: "top-center" });
     }
   };
+  const storageCheck = async () => {
+    try {
+      const response = await axiosInstance.get("/content/check-storage");
+      if (response?.data) {
+        setStorage(response.data);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error saving reel data", { position: "top-center" });
+    }
+  };
+
+  useEffect(() => {
+    storageCheck();
+  }, []);
 
   const uploadComponentFn = (results) => {
     const { event, info } = results || {};
@@ -162,6 +184,8 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg space-y-6">
+        <StorageCheck storageData={storage} />
+
         {!noPageFound && (
           <UplodeContentConfiguration
             page_id={page_id}
