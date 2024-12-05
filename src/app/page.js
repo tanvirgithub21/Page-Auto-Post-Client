@@ -55,6 +55,8 @@ export default function Home() {
   const [shortLivedToken, setShortLivedToken] = useState("");
   const [appId, setAppId] = useState("");
   const [appSecret, setAppSecret] = useState("");
+  const [useReferenceStatus, setUseReferenceStatus] = useState(false);
+  const [referencePageId, setReferencePageId] = useState(String);
 
   // Use a ref to store the latest content_type value
   const contentTypeRef = useRef(content_type);
@@ -129,6 +131,8 @@ export default function Home() {
       short_lived_token: shortLivedToken,
       app_id: appId,
       app_secret: appSecret,
+      reference_page_id: referencePageId,
+      reference_status: useReferenceStatus,
     };
     console.log("Saving new page data:", pageData);
     try {
@@ -204,6 +208,10 @@ export default function Home() {
           setAppSecret={setAppSecret}
           closeModal={closeModal}
           handleSavePage={handleSavePage}
+          pageOptions={pageOptions}
+          useReferenceStatus={useReferenceStatus}
+          setUseReferenceStatus={setUseReferenceStatus}
+          setReferencePageId={setReferencePageId}
         />
       )}
     </div>
